@@ -30,7 +30,12 @@ def med_process(med_file):
 
 # drugbank ID to SMILES
 def db2SMILES_process(drugbankinfo_file, med_voc=None):
-    drug_info = pd.read_csv(drugbankinfo_file, usecols=['drugbank_id', 'moldb_smiles'])
+    drug_info = pd.read_csv(drugbankinfo_file, usecols=['drugbank_id', 'moldb_smiles'].
+     on_bad_lines='skip',  # Skip bad lines instead of crashing
+        engine='python',      # Use Python engine for better error handling
+        encoding='utf-8',
+        quoting=1
+    )
     drug_info.drop_duplicates(inplace=True)
     drug_info= drug_info.dropna(axis=0)
     drug_info.moldb_smiles = drug_info.moldb_smiles.map(lambda x: [x])
@@ -244,9 +249,9 @@ def combine_process(med_pd, diag_pd, pro_pd):
         filter_flag = filter_flag_diag or filter_flag_pro
 
     # flatten and merge
-    diag_pd = diag_pd.groupby(by=['SUBJECT_ID','HADM_ID'])['ICD_CODE'].unique().reset_index()  
+    diag_pd = diag_pd.groupby(by=['SUBJECT_ID','HADM_ID'])['ICD_CODE'].unique().reset_index()
     med_pd = med_pd.groupby(by=['SUBJECT_ID', 'HADM_ID'])['drugbank_id'].unique().reset_index()
-    pro_pd = pro_pd.groupby(by=['SUBJECT_ID','HADM_ID'])['ICD_CODE'].unique().reset_index().rename(columns={'ICD_CODE':'PRO_CODE'})  
+    pro_pd = pro_pd.groupby(by=['SUBJECT_ID','HADM_ID'])['ICD_CODE'].unique().reset_index().rename(columns={'ICD_CODE':'PRO_CODE'})
     med_pd['drugbank_id'] = med_pd['drugbank_id'].map(lambda x: list(x))
     pro_pd['PRO_CODE'] = pro_pd['PRO_CODE'].map(lambda x: list(x))
     data = diag_pd.merge(med_pd, on=['SUBJECT_ID', 'HADM_ID'], how='inner')
@@ -400,7 +405,7 @@ def create_patient_record(data, diag_voc, med_voc, pro_voc):
             visit_weights.append(visit_weight)
             admission.append(visit_weight)
             patient.append(admission)
-        records.append(patient) 
+        records.append(patient)
     dill.dump(obj=records, file=open(ehr_sequence_file, 'wb'))
     return records, visit_weights
 
@@ -408,8 +413,8 @@ def create_patient_record(data, diag_voc, med_voc, pro_voc):
 # get ddi matrix
 def get_ddi_matrix(records, med_voc, ddi_file):
     med_voc_size = len(med_voc.idx2word)
-    
-    # weighted ehr adj 
+
+    # weighted ehr adj
     ehr_adj = np.zeros((med_voc_size, med_voc_size))
     for patient in records:
         for adm in patient:
@@ -420,12 +425,12 @@ def get_ddi_matrix(records, med_voc, ddi_file):
                         continue
                     ehr_adj[med_i, med_j] = 1
                     ehr_adj[med_j, med_i] = 1
-    dill.dump(ehr_adj, open(ehr_adjacency_file, 'wb'))  
-    
+    dill.dump(ehr_adj, open(ehr_adjacency_file, 'wb'))
+
     # ddi adj
     # ddi_df = pd.read_csv(ddi_file, sep='\t')
     ddi_df = pd.read_csv(ddi_file)
-    
+
     ddi_adj = np.zeros((med_voc_size,med_voc_size))
     ddi_adj_syn = np.zeros((med_voc_size,med_voc_size))
     for index, row in ddi_df.iterrows():
@@ -443,7 +448,7 @@ def get_ddi_matrix(records, med_voc, ddi_file):
                 ddi_adj_syn[med_voc.word2idx[drug1], med_voc.word2idx[drug2]] = 1
                 ddi_adj_syn[med_voc.word2idx[drug2], med_voc.word2idx[drug1]] = 1
     print('#ddi_pairs:', ddi_adj.sum(), '#synergistic_pairs:', ddi_adj_syn.sum())
-    dill.dump(ddi_adj, open(ddi_adverse_file, 'wb')) 
+    dill.dump(ddi_adj, open(ddi_adverse_file, 'wb'))
     dill.dump(ddi_adj_syn, open(ddi_synergistic_file, 'wb'))
 
     return ddi_adj, ddi_adj_syn
@@ -465,8 +470,8 @@ def cal_ddi_rate_score(records, ddi_adj):
                         dd_cnt += 1
                     # if ddi_adj_syn[med_i, med_j] == 1 or ddi_adj_syn[med_j, med_i] == 1:
                     #     dd_syn_cnt += 1
-    ddi_rate_score = dd_cnt / all_cnt if all_cnt > 0 else 0 
-    # ddi_rate_score_syn = dd_syn_cnt / all_cnt if all_cnt > 0 else 0 
+    ddi_rate_score = dd_cnt / all_cnt if all_cnt > 0 else 0
+    # ddi_rate_score_syn = dd_syn_cnt / all_cnt if all_cnt > 0 else 0
     print(f'{ddi_rate_score=}')
     return ddi_rate_score
 
