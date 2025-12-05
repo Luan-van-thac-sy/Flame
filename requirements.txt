@@ -1,0 +1,52 @@
+# ============================================
+# Core ML/DL Frameworks
+# ============================================
+transformers>=4.35.0
+datasets
+peft
+
+# ============================================
+# LLM API Access (for note generation)
+# ============================================
+# Google Gemini API (for generate_note_gemini.ipynb)
+google-genai
+
+# Optional: OpenAI API (for generate_note_gpt.ipynb)
+# openai>=1.0.0
+# tiktoken>=0.5.0
+
+# ============================================
+# Data Processing
+# ============================================
+pandas
+numpy
+dill
+
+# ============================================
+# Chemistry & Drug Libraries (for embeddings)
+# ============================================
+rdkit
+networkx
+
+# ============================================
+# Progress Bars & CLI
+# ============================================
+tqdm
+fire
+
+
+# ============================================
+# Optional: Advanced Training Utilities
+# ============================================
+# Uncomment the following if using GRPO training (finetune_rethink_grpo.py)
+# unsloth>=2024.1
+# vllm>=0.2.0
+
+# Uncomment if using flash attention for faster training
+# flash-attn>=2.3.0
+
+# ============================================
+# Additional Utilities
+# ============================================
+typing-extensions
+
