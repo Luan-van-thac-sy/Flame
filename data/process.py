@@ -30,7 +30,7 @@ def med_process(med_file):
 
 # drugbank ID to SMILES
 def db2SMILES_process(drugbankinfo_file, med_voc=None):
-    drug_info = pd.read_csv(drugbankinfo_file, usecols=['drugbank_id', 'moldb_smiles'].
+    drug_info = pd.read_csv(drugbankinfo_file, usecols=['drugbank_id', 'moldb_smiles'],
      on_bad_lines='skip',  # Skip bad lines instead of crashing
         engine='python',      # Use Python engine for better error handling
         encoding='utf-8',
