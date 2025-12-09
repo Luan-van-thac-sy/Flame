@@ -39,6 +39,7 @@ def finetune_ddp(
     load_in_8bit = False,
     eval_epochs = 32,
     ddi_path = "data/data_process/output/mimic-iii/ddi_A_final.pkl",
+    med_name2idx_path = "data/data_process/output/mimic-iii/med_name2idx.json",
     # embedding hyperparams
     use_pat_embed = True,
     use_dias_embed = True,
@@ -91,8 +92,10 @@ def finetune_ddp(
     train_on_inputs = True if train_on_inputs else False
     resume_from_checkpoint = True if resume_from_checkpoint else False
     gradient_accumulation_steps = batch_size // micro_batch_size
-    prompt_template_name = 'llama-2'
-    prompter = Prompter(prompt_template_name)
+
+    # Load med_name2idx dictionary
+    med_name2idx = json.load(open(med_name2idx_path, 'r'))
+    prompter = Prompter(med_name2idx, use_note=True, use_code=True, template_name='llama-2')
 
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(
@@ -102,6 +105,7 @@ def finetune_ddp(
             f"data_path: {data_path}\n"
             f"output_dir: {output_dir}\n"
             f"ddi_path: {ddi_path}\n"
+            f"med_name2idx_path: {med_name2idx_path}\n"
             f"batch_size: {batch_size}\n"
             f"micro_batch_size: {micro_batch_size}\n"
             f"eval_epochs: {eval_epochs}\n"
@@ -126,12 +130,12 @@ def finetune_ddp(
             f"pat_embed_table_path: {pat_embed_table_path}\n"
             f"dias_embed_table_path: {dias_embed_table_path}\n"
             f"pro_embed_table_path: {pro_embed_table_path}\n"
-            f"drug_embed_table_path: {drug_embed_table_path}\n"  
+            f"drug_embed_table_path: {drug_embed_table_path}\n"
             f'\nsome other hyperparams:\n'
             f'med_num: {med_num}\n'
             f'random_jaccard: {random_jaccard}\n'
         )
-    
+
     devices = 'cuda'
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
@@ -176,7 +180,7 @@ def finetune_ddp(
         myconfig = mymodel.config
     # mymodel.cuda()
     mymodel.to(devices)
-    
+
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print('\nSuccessfully loaded specified model and config\n')
         print(mymodel, '\n')
@@ -242,7 +246,7 @@ def finetune_ddp(
         data = load_dataset("json", data_files=data_path)
     else:
         data = load_dataset(data_path)
-        
+
     if val_set_size > 0:
         train_val = data["train"].train_test_split(
             test_size=val_set_size, shuffle=False
@@ -287,11 +291,11 @@ def finetune_ddp(
             checkpoint_folder = os.path.join(args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}")
             kwargs["model"].save_pretrained(checkpoint_folder)
 
-            return control    
+            return control
 
     class MyEarlyStoppingCallback(EarlyStoppingCallback):
         def __init__(self, early_stopping_patience: int = 3, early_stopping_threshold=0.01):
-            super().__init__(early_stopping_patience=early_stopping_patience, 
+            super().__init__(early_stopping_patience=early_stopping_patience,
                                 early_stopping_threshold=early_stopping_threshold)
 
         def on_evaluate(self, args, state, control, metrics, **kwargs):
@@ -375,7 +379,7 @@ def finetune_ddp(
                 "recall": round(recall, 4),
                 "precision": round(precision, 4),
                 "f1": round(f1, 4),
-            }        
+            }
 
     else:
         def compute_metrics(eval_preds):
@@ -395,7 +399,7 @@ def finetune_ddp(
     def preprocess_logits_for_metrics(logits, labels):
         """
         This function is used to preprocess logits for the compute_metrics function.
-        Output: 
+        Output:
             logits: [batch_size], binary logits, 0 for No_token_id (No), 1 for Yes_token_id (Yes), \
                 indicating whether the drug is predicted or not
             labels: [batch_size], binary labels, \
@@ -466,7 +470,7 @@ def finetune_ddp(
             ),
         compute_metrics=compute_metrics,
         preprocess_logits_for_metrics=preprocess_logits_for_metrics,
-        callbacks=[SavePeftModelCallback, 
+        callbacks=[SavePeftModelCallback,
                     MyEarlyStoppingCallback(
                         early_stopping_patience=early_stopping_patience,
                         early_stopping_threshold=0.0),
