@@ -103,7 +103,13 @@ class MyModel(PreTrainedModel):
         self.tokenizer.pad_token_id = (0)
         self.tokenizer.padding_side = "left"
         self.tokenizer.add_special_tokens({'additional_special_tokens': ['[PatEmb]','[DiasEmb]','[ProEmb]','[DrugEmb]']})
-        self.llm.resize_token_embeddings(len(self.tokenizer))
+
+        # Only resize if necessary and disable mean_resizing to avoid meta tensor issues
+        current_vocab_size = self.llm.get_input_embeddings().weight.shape[0]
+        new_vocab_size = len(self.tokenizer)
+        if current_vocab_size != new_vocab_size:
+            self.llm.resize_token_embeddings(new_vocab_size, mean_resizing=False)
+
         if self.devices == 'cuda' or self.devices == 'cuda:0':
             print('#######Successfully initialized special tokens')
             print('*****tokenizer:')
