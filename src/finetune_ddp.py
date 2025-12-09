@@ -438,7 +438,7 @@ def finetune_ddp(
         eval_dataset=val_data,
         args=transformers.TrainingArguments(
             output_dir=output_dir,
-            evaluation_strategy="steps" if val_set_size > 0 else "no",
+            eval_strategy="steps" if val_set_size > 0 else "no",
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             save_strategy="steps",
