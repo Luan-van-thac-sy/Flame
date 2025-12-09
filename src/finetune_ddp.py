@@ -95,7 +95,7 @@ def finetune_ddp(
 
     # Load med_name2idx dictionary
     med_name2idx = json.load(open(med_name2idx_path, 'r'))
-    prompter = Prompter(med_name2idx, use_note=True, use_code=True, template_name='llama-2')
+    prompter = Prompter(med_name2idx, use_note=True, use_code=True, template_name='cls')
 
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(
