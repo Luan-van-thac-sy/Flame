@@ -77,10 +77,12 @@ class MyModel(PreTrainedModel):
         super().__init__(config)
         self.config = config
         self.devices = kwargs.get('devices', 'cuda')
-        self.llm = AutoModelForCausalLM.from_pretrained(os.path.join("./Models", config.llm_name),
-                                                        torch_dtype=torch.bfloat16,
-                                                        use_flash_attention_2=kwargs.get("use_flash_attn", False),
-                                                        )
+        use_flash_attn = kwargs.get("use_flash_attn", False)
+        self.llm = AutoModelForCausalLM.from_pretrained(
+            os.path.join("./Models", config.llm_name),
+            dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2" if use_flash_attn else "eager",
+        )
         self.init_special_tokenizer()
         self.init_peft_model()
         self.load_projector()
@@ -88,7 +90,7 @@ class MyModel(PreTrainedModel):
         if 'hadm_id_map' not in kwargs:
             raise ValueError('hadm_id_map must be provided in kwargs')
         self.hadm_id_map = kwargs.get('hadm_id_map')
-        
+
     def print_trainable_parameters(self):
         print('*****trainable parameters:', sum(p.numel() for p in self.parameters() if p.requires_grad), '| total parameters:', sum(p.numel() for p in self.parameters()), '| trainable ratio: {:.5f}%'.format(sum(p.numel() for p in self.parameters() if p.requires_grad) / sum(p.numel() for p in self.parameters()) * 100))
         print('trainable para list: ')
@@ -164,7 +166,7 @@ class MyModel(PreTrainedModel):
             self.drug_embed_table = dill.load(open(self.config.drug_embed_table_path, "rb"))
 
     def get_embedding(self, hadm_id):
-        if self.config.use_pat_embed and (hadm_id // 1000) in self.pat_embed_table: 
+        if self.config.use_pat_embed and (hadm_id // 1000) in self.pat_embed_table:
             pat_emb = self.pat_embed_table[hadm_id // 1000]
             llm_pat_emb = self.pat_projector(pat_emb.to(self.pat_projector[0].weight.dtype).to(self.devices)).unsqueeze(0)
         else:
@@ -193,11 +195,11 @@ class MyModel(PreTrainedModel):
             llm_drug_emb = None
 
         return llm_pat_emb, llm_dias_emb, llm_pro_emb, llm_drug_emb
-    
+
 
     def forward(self, input_ids, attention_mask, labels, hadm_ids):
         input_embeds = self.llm.get_input_embeddings()(input_ids)  # (bs, seq_len, emb_dim)
-        
+
         pat_token_id = self.tokenizer('[PatEmb]', return_tensors="pt",add_special_tokens=False).input_ids.item()
         dias_token_id = self.tokenizer('[DiasEmb]', return_tensors="pt",add_special_tokens=False).input_ids.item()
         pro_token_id = self.tokenizer('[ProEmb]', return_tensors="pt",add_special_tokens=False).input_ids.item()
@@ -293,6 +295,5 @@ class MyModel(PreTrainedModel):
 
         return model
 
-        
-        
-        
+
+
