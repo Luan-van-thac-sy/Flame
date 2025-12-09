@@ -146,13 +146,13 @@ def evaluate(
         data = load_dataset("json", data_files=data_path)
     else:
         data = load_dataset(data_path)
-    
+
     data = (
         data["train"].map(generate_and_tokenize_prompt)
     )
-    
+
     val_set_size = len(data)
-    
+
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(
             f'Successfully loaded data from {data_path} with {len(data)} data points'
@@ -177,11 +177,11 @@ def evaluate(
             checkpoint_folder = os.path.join(args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}")
             kwargs["model"].save_pretrained(checkpoint_folder)
 
-            return control    
+            return control
 
     class MyEarlyStoppingCallback(EarlyStoppingCallback):
         def __init__(self, early_stopping_patience: int = 3, early_stopping_threshold=0.01):
-            super().__init__(early_stopping_patience=early_stopping_patience, 
+            super().__init__(early_stopping_patience=early_stopping_patience,
                                 early_stopping_threshold=early_stopping_threshold)
 
         def on_evaluate(self, args, state, control, metrics, **kwargs):
@@ -207,8 +207,10 @@ def evaluate(
         idx_list = np.nonzero(preds)[0].tolist()
         for i in range(len(idx_list)):
             for j in range(i+1, len(idx_list)):
-                ddi_count += ddi_matrix[idx_list[i], idx_list[j]]
-                total_count += 1
+                # Add bounds checking to avoid index errors
+                if idx_list[i] < ddi_matrix.shape[0] and idx_list[j] < ddi_matrix.shape[1]:
+                    ddi_count += ddi_matrix[idx_list[i], idx_list[j]]
+                    total_count += 1
         ddi_rate = ddi_count / total_count if total_count > 0 else 0
         return ddi_rate
 
@@ -240,7 +242,7 @@ def evaluate(
             ddi_list.append(ddi)
             num_drugs_list.append(num_drugs)
             num_drugs_gt_list.append(num_drugs_gt)
-            
+
             if save_path and int(os.environ.get("LOCAL_RANK", 0)) == 0:
                 with open(result_path, 'a', newline='') as f:
                     writer = csv.writer(f)
@@ -257,7 +259,7 @@ def evaluate(
         num_drugs_gt = np.mean(num_drugs_gt_list)
 
         return recall, precision, f1, jaccard, ddi_rate, num_drugs, num_drugs_gt
-    
+
 
     def compute_metrics(eval_preds):
         (preds, labels), _ = eval_preds
@@ -276,7 +278,7 @@ def evaluate(
     def preprocess_logits_for_metrics(logits, labels):
         """
         This function is used to preprocess logits for the compute_metrics function.
-        Output: 
+        Output:
             logits: [batch_size], binary logits, 0 for No_token_id (No), 1 for Yes_token_id (Yes), \
                 indicating whether the drug is predicted or not
             labels: [batch_size], binary labels, \
@@ -330,7 +332,7 @@ def evaluate(
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(f'finished evaluation')
         print(result)
-    
+
     logger.info(f'finished evaluation')
     logger.info(result)
 
