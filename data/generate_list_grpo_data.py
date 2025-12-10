@@ -65,7 +65,7 @@ def generate_list_grpo_data(med_name2idx='data/data_process/output/mimic-iii/med
             sample_miss_meds = np.random.choice(gt_medids, size=miss_num, replace=False, p=np.array(candidate_miss_weights) / np.sum(candidate_miss_weights))
             sample_miss_meds = sample_miss_meds.tolist()
 
-            extra_med_candidates = list(set(range(0, 151)) - set(gt_medids))
+            extra_med_candidates = list(set(range(0, 150)) - set(gt_medids))
             candidate_extra_weights = [extra_weights[idx] for idx in extra_med_candidates]
             sample_extra_meds = np.random.choice(extra_med_candidates, size=extra_num, replace=False, p=np.array(candidate_extra_weights) / np.sum(candidate_extra_weights))
             sample_extra_meds = sample_extra_meds.tolist()

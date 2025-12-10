@@ -51,10 +51,10 @@ def load_data(mode='train', file_path='data/data_process/output/mimic-iii/data4L
 
     # return data and drug names
     if mode == 'train':
-        # print(f'Train data size: {len(data_train)}\n') 
+        # print(f'Train data size: {len(data_train)}\n')
         return data_train
     elif mode == 'val':
-        # print(f'Val data size: {len(data_val)}\n') 
+        # print(f'Val data size: {len(data_val)}\n')
         return data_val
     elif mode == 'test':
         print(f'Test data size: {len(data_test)}\n')

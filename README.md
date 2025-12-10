@@ -119,8 +119,8 @@ torchrun --nproc_per_node=X --master_port=XXX ./src/finetune_ddp.py \
     --num_epochs 1 \
     --learning_rate 5e-4 \
     --early_stopping_patience 20 \
-    --med_num 151 \
-    --val_set_size 15100
+    --med_num 150 \
+    --val_set_size 15000
 ```
 
 #### 3.Evaluate on test set

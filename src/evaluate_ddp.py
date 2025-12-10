@@ -37,7 +37,7 @@ def evaluate(
     data_path = None,
     cutoff_len = 5120,
     train_on_inputs = 0,
-    med_num = 151,
+    med_num = 150,
     ddi_path = "data/data_process/output/mimic-iii/ddi_A_final.pkl",
     save_path = None,
 ):
@@ -146,13 +146,13 @@ def evaluate(
         data = load_dataset("json", data_files=data_path)
     else:
         data = load_dataset(data_path)
-    
+
     data = (
         data["train"].map(generate_and_tokenize_prompt)
     )
-    
+
     val_set_size = len(data)
-    
+
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(
             f'Successfully loaded data from {data_path} with {len(data)} data points'
@@ -177,11 +177,11 @@ def evaluate(
             checkpoint_folder = os.path.join(args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}")
             kwargs["model"].save_pretrained(checkpoint_folder)
 
-            return control    
+            return control
 
     class MyEarlyStoppingCallback(EarlyStoppingCallback):
         def __init__(self, early_stopping_patience: int = 3, early_stopping_threshold=0.01):
-            super().__init__(early_stopping_patience=early_stopping_patience, 
+            super().__init__(early_stopping_patience=early_stopping_patience,
                                 early_stopping_threshold=early_stopping_threshold)
 
         def on_evaluate(self, args, state, control, metrics, **kwargs):
@@ -240,7 +240,7 @@ def evaluate(
             ddi_list.append(ddi)
             num_drugs_list.append(num_drugs)
             num_drugs_gt_list.append(num_drugs_gt)
-            
+
             if save_path and int(os.environ.get("LOCAL_RANK", 0)) == 0:
                 with open(result_path, 'a', newline='') as f:
                     writer = csv.writer(f)
@@ -257,7 +257,7 @@ def evaluate(
         num_drugs_gt = np.mean(num_drugs_gt_list)
 
         return recall, precision, f1, jaccard, ddi_rate, num_drugs, num_drugs_gt
-    
+
 
     def compute_metrics(eval_preds):
         (preds, labels), _ = eval_preds
@@ -276,7 +276,7 @@ def evaluate(
     def preprocess_logits_for_metrics(logits, labels):
         """
         This function is used to preprocess logits for the compute_metrics function.
-        Output: 
+        Output:
             logits: [batch_size], binary logits, 0 for No_token_id (No), 1 for Yes_token_id (Yes), \
                 indicating whether the drug is predicted or not
             labels: [batch_size], binary labels, \
@@ -330,33 +330,33 @@ def evaluate(
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print(f'finished evaluation')
         print(result)
-    
+
     logger.info(f'finished evaluation')
     logger.info(result)
 
     if save_path:
         ### generate visit_error.csv and drug_error.csv
-        each_med_miss = [0 for _ in range(151)]
-        each_med_extra = [0 for _ in range(151)]
+        each_med_miss = [0 for _ in range(150)]
+        each_med_extra = [0 for _ in range(150)]
 
         df = pd.read_csv(result_path)
         for i in range(len(df)):
             pred = eval(df["preds"][i])
             gt = eval(df["labels"][i])
-            for med_idx in range(151):
+            for med_idx in range(150):
                 if med_idx not in pred and med_idx in gt:
                     each_med_miss[med_idx] += 1
                 if med_idx in pred and med_idx not in gt:
                     each_med_extra[med_idx] += 1
 
-        each_med_err = [each_med_miss[i] + each_med_extra[i] for i in range(151)]
+        each_med_err = [each_med_miss[i] + each_med_extra[i] for i in range(150)]
 
         drug_error_analysis_path = os.path.join(save_path, "drug_error.csv")
 
         with open(drug_error_analysis_path, "w") as f:
             writer = csv.writer(f)
             writer.writerow(["Med", "Miss", "Extra", "Err"])
-            for i in range(151):
+            for i in range(150):
                 writer.writerow([i, each_med_miss[i], each_med_extra[i], each_med_err[i]])
 
         visit_num = len(df)
@@ -368,7 +368,7 @@ def evaluate(
         for i in range(visit_num):
             pred = eval(df["preds"][i])
             gt = eval(df["labels"][i])
-            for med_idx in range(151):
+            for med_idx in range(150):
                 if med_idx not in pred and med_idx in gt:
                     each_visit_miss[i] += 1
                 if med_idx in pred and med_idx not in gt:

@@ -55,7 +55,7 @@ def finetune_ddp(
     num_epochs = 10,
     learning_rate = 5e-4,
     cutoff_len = 5120,
-    med_num = 151,
+    med_num = 150,
     val_set_size = 2368,
     random_jaccard = 0.0,
     early_stopping_patience = 25,
