@@ -61,7 +61,7 @@ def finetune_rethink_grpo(
             f"  alpha: {alpha}\n"
             f"  beta: {beta}\n"
         )
-    
+
     if use_lora:
         grpo_model, grpo_tokenizer = FastLanguageModel.from_pretrained(
             model_name=grpo_model_path,
@@ -102,7 +102,7 @@ def finetune_rethink_grpo(
         f"an example of the training data: {train_data[0]}"
     )
 
-    ddi_path = "./data/ddi_A_final.pkl"
+    ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
     med_name2idx_path = "./data/med_name2idx.json"
 
     ddi_metric = dill.load(open(ddi_path, "rb"))
@@ -112,7 +112,7 @@ def finetune_rethink_grpo(
 
         if len(gt) == 0 or len(pred) == 0:
             return 0
-        
+
         return len(set(pred) & set(gt)) / len(set(pred) | set(gt))
 
     def get_ddi(pred):
@@ -131,7 +131,7 @@ def finetune_rethink_grpo(
 
         if len(completion) == 0:
             return [], 0
-        
+
         pred_names = completion.split("\n")
         refuse_num = 0
         pred_ids = []
@@ -161,7 +161,7 @@ def finetune_rethink_grpo(
             else:
                 raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
             modified_jaccard = get_jaccard(modidied_drugs, gt_drugs)
-            
+
             reward = modified_jaccard - original_jaccard
             rewards.append(reward)
 
@@ -179,7 +179,7 @@ def finetune_rethink_grpo(
             else:
                 raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
             modified_ddi = get_ddi(modidied_drugs)
-            
+
             reward = - modified_ddi + original_ddi
             rewards.append(reward)
 

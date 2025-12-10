@@ -26,7 +26,7 @@ from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
-ddi_path = "./data/ddi_A_final.pkl"
+ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
 ddi_metric = dill.load(open(ddi_path, "rb"))
 
 
@@ -37,7 +37,7 @@ def evaluate_pretrain(
     evaluate_result_path: str = None,
     task: str = None,
 ):
-    
+
     hadm_id_map = {}
     with open(data_path, "r") as f:
         data = json.load(f)

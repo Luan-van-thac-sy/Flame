@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-ddi_path = "./data/ddi_A_final.pkl"
+ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
 ddi_metric = dill.load(open(ddi_path, "rb"))
 
 def cal_metric(pred, gt):
@@ -27,7 +27,7 @@ def cal_metric(pred, gt):
     tp = len(set(pred) & set(gt))
     fp = len(set(pred) - set(gt))
     fn = len(set(gt) - set(pred))
-    jacard = tp / (tp + fp + fn)    
+    jacard = tp / (tp + fp + fn)
     precision = tp / (tp + fp) if tp + fp != 0 else 0
     recall = tp / (tp + fn) if tp + fn != 0 else 0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall != 0 else 0

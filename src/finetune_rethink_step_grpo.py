@@ -63,7 +63,7 @@ def finetune_rethink_grpo(
             f"  beta: {beta}\n"
             f"  step_reward_weight: {step_reward_weight}\n"
         )
-    
+
     if use_lora:
         grpo_model, grpo_tokenizer = FastLanguageModel.from_pretrained(
             model_name=grpo_model_path,
@@ -104,8 +104,8 @@ def finetune_rethink_grpo(
         f"an example of the training data: {train_data[0]}"
     )
 
-    ddi_path = "./data/ddi_A_final.pkl"
-    med_name2idx_path = "./data/med_name2idx.json"
+    ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
+    med_name2idx_path = "/content/Flame/data/data_process/output/mimic-iii/med_name2idx.json"
 
     ddi_metric = dill.load(open(ddi_path, "rb"))
     med_name2idx = json.load(open(med_name2idx_path, "r"))
@@ -114,7 +114,7 @@ def finetune_rethink_grpo(
 
         if len(gt) == 0 or len(pred) == 0:
             return 0
-        
+
         return len(set(pred) & set(gt)) / len(set(pred) | set(gt))
 
     def get_ddi(pred):
@@ -133,7 +133,7 @@ def finetune_rethink_grpo(
 
         if len(completion) == 0:
             return [], [0]
-        
+
         pred_names = completion.split("\n")
         pred_ids = []
         refuses = []
@@ -166,38 +166,31 @@ def finetune_rethink_grpo(
     #         else:
     #             raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
     #         modified_jaccard = get_jaccard(modidied_drugs, gt_drugs)
-            
+
     #         reward = modified_jaccard - original_jaccard
     #         rewards.append(reward)
 
     #     return rewards
 
-    def jaccard_reward(prompts, completions, task, input_drug_id, gt_id):
-        total_reward = []
-        step_rewards = []
+    def jaccard_reward(prompts, completions, task, input_drug_id, gt_id, completion_ids=None, **kwargs):
+        rewards = []
         for completion, t, in_drugs, gt_drugs in zip(completions, task, input_drug_id, gt_id):
             pred_ids, refuses = get_completion_id_and_refuses(completion)
-            part_modified_drugs = in_drugs.copy()
-            step_potential = []
-            step_potential.append(get_jaccard(part_modified_drugs, gt_drugs))
-            for end_idx, pred_id in enumerate(pred_ids):
-                if pred_id != -1:
-                    if t == 'add':
-                        part_modified_drugs = sorted(list(set(part_modified_drugs) | set([pred_id])))
-                    elif t == 'remove':
-                        part_modified_drugs = sorted(list(set(part_modified_drugs) - set([pred_id])))
-                    else:
-                        raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
-                step_potential.append(get_jaccard(part_modified_drugs, gt_drugs))
-            step_reward = []
-            for i in range(len(step_potential) - 1):
-                step_reward.append(step_potential[i + 1] - step_potential[i])
-            step_rewards.append(step_reward)
+            original_jaccard = get_jaccard(in_drugs, gt_drugs)
+            if t == 'add':
+                modified_drugs = sorted(list(set(in_drugs) | set(pred_ids)))
+            elif t == 'remove':
+                modified_drugs = sorted(list(set(in_drugs) - set(pred_ids)))
+            else:
+                raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
+            modified_jaccard = get_jaccard(modified_drugs, gt_drugs)
 
-            total_reward.append(step_potential[-1] - step_potential[0])
-        return total_reward, step_rewards
-                
-                
+            reward = modified_jaccard - original_jaccard
+            rewards.append(reward)
+
+        return rewards
+
+
 
     # def ddi_reward(prompts, completions, task, input_drug_id, gt_id):
     #     rewards = []
@@ -211,36 +204,29 @@ def finetune_rethink_grpo(
     #         else:
     #             raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
     #         modified_ddi = get_ddi(modidied_drugs)
-            
+
     #         reward = - modified_ddi + original_ddi
     #         rewards.append(reward)
 
     #     return rewards
 
-    def ddi_reward(prompts, completions, task, input_drug_id, gt_id):
-        total_reward = []
-        step_rewards = []
+    def ddi_reward(prompts, completions, task, input_drug_id, gt_id, completion_ids=None, **kwargs):
+        rewards = []
         for completion, t, in_drugs, gt_drugs in zip(completions, task, input_drug_id, gt_id):
             pred_ids, refuses = get_completion_id_and_refuses(completion)
-            part_modified_drugs = in_drugs.copy()
-            step_potential = []
-            step_potential.append(get_ddi(part_modified_drugs))
-            for end_idx, pred_id in enumerate(pred_ids):
-                if pred_id != -1:
-                    if t == 'add':
-                        part_modified_drugs = sorted(list(set(part_modified_drugs) | set([pred_id])))
-                    elif t == 'remove':
-                        part_modified_drugs = sorted(list(set(part_modified_drugs) - set([pred_id])))
-                    else:
-                        raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
-                step_potential.append(get_ddi(part_modified_drugs))
-            step_reward = []
-            for i in range(len(step_potential) - 1):
-                step_reward.append(-step_potential[i + 1] + step_potential[i])
-            step_rewards.append(step_reward)
+            original_ddi = get_ddi(in_drugs)
+            if t == 'add':
+                modified_drugs = sorted(list(set(in_drugs) | set(pred_ids)))
+            elif t == 'remove':
+                modified_drugs = sorted(list(set(in_drugs) - set(pred_ids)))
+            else:
+                raise ValueError(f"Invalid task type. Expected 'add' or 'remove', got {t}.")
+            modified_ddi = get_ddi(modified_drugs)
 
-            total_reward.append(-step_potential[-1] + step_potential[0])
-        return total_reward, step_rewards
+            reward = -modified_ddi + original_ddi
+            rewards.append(reward)
+
+        return rewards
 
     # def refuse_rate_reward(prompts, completions, task, input_drug_id, gt_id):
     #     rewards = []
@@ -251,23 +237,19 @@ def finetune_rethink_grpo(
 
     #     return rewards
 
-    def refuse_rate_reward(prompts, completions, task, input_drug_id, gt_id):
-        total_reward = []
-        step_rewards = []
+    def refuse_rate_reward(prompts, completions, task, input_drug_id, gt_id, completion_ids=None, **kwargs):
+        rewards = []
         for completion, t, in_drugs, gt_drugs in zip(completions, task, input_drug_id, gt_id):
             pred_ids, refuses = get_completion_id_and_refuses(completion)
-            step_reward = []
-            refuse_num = 0
-            for i in range(len(refuses)):
-                refuse_num += refuses[i]
-                step_reward.append(-refuse_num / (i + 1))
-            step_rewards.append(step_reward)
             if len(refuses) == 0:
-                total_reward.append(0)
+                reward = 0
             else:
-                total_reward.append(-refuse_num / len(refuses))
-        return total_reward, step_rewards
-            
+                refuse_num = sum(refuses)
+                reward = -refuse_num / len(refuses)
+            rewards.append(reward)
+
+        return rewards
+
 
 
     from trl import GRPOConfig, GRPOTrainer

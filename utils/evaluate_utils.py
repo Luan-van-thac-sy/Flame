@@ -5,9 +5,9 @@ import pandas as pd
 
 class Evaluator(object):
     def __init__(self):
-        ddi_path = './data/ddi_A_final.pkl'
-        voc_path = './data/voc_final.pkl'
-        drugbank2name_file = './data/drugbank2name.csv'
+        ddi_path = '/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl'
+        voc_path = '/content/Flame/data/data_process/output/mimic-iii/voc_final.pkl'
+        drugbank2name_file = '/content/Flame/data/data_process/input/drugbank2name.csv'
         self.ddi_A = dill.load(open(ddi_path, 'rb'))
         self.voc = dill.load(open(voc_path, 'rb'))
         self.drugbank2name = pd.read_csv(drugbank2name_file)
@@ -101,11 +101,10 @@ class Evaluator(object):
         else:
             drug_num_gt = len(gt_list)
         return recall, precision, f1, jaccard, ddi_rate, drug_num, drug_num_gt
-    
+
     def get_metrics_each_drug(self, pred_list, gt_list):
         recall = self.get_recall(pred_list, gt_list)
         precision = self.get_precision(pred_list, gt_list)
         f1 = self.get_f1(recall, precision)
         jaccard = self.get_jaccard(pred_list, gt_list)
-        return recall, precision, f1, jaccard        
-        
+        return recall, precision, f1, jaccard
