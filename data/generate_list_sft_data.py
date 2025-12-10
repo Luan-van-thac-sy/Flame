@@ -49,9 +49,21 @@ def generate_list_sft_data(sample_num = 100000,
             each_gtlen_extra_dict[gt_len].append(extra_num)
 
         def sample_miss_extra(gt_len):
+            # TODO: Hotfix later - Using nearest neighbor approximation when GT Length not found
+
             gt_len = int(gt_len)
             if gt_len not in each_gtlen_miss_dict:
-                raise ValueError(f"GT Len {gt_len} not found in the dictionary.")
+                # Find the nearest available GT length
+                available_lengths = sorted(each_gtlen_miss_dict.keys())
+                if not available_lengths:
+                    raise ValueError("No GT lengths available in the dictionary.")
+
+                # Find nearest length
+                nearest_len = min(available_lengths, key=lambda x: abs(x - gt_len))
+                if int(os.environ.get("LOCAL_RANK", 0)) == 0:
+                    print(f"Warning: GT Len {gt_len} not found, using nearest length {nearest_len}")
+                gt_len = nearest_len
+
             miss_num = random.choice(each_gtlen_miss_dict[gt_len])
             extra_num = random.choice(each_gtlen_extra_dict[gt_len])
             return miss_num, extra_num
@@ -64,6 +76,8 @@ def generate_list_sft_data(sample_num = 100000,
         print(f"Number of medicines in med_names: {len(med_names)}")
         print(f"Number of weights in extra_weights: {len(extra_weights)}")
         print(f"Will use max_med_idx: {min(len(med_names), len(extra_weights))}")
+        print(f"Available GT Lengths in error statistics: {sorted(each_gtlen_miss_dict.keys())}")
+        print(f"Note: Missing GT Lengths will use nearest neighbor approximation")
 
         def generate_input_medids(gt_medids):
             gt_len = len(gt_medids)
