@@ -230,7 +230,7 @@ def generate_list_sft_data(sample_num = 100000,
 
             output_medids = sorted(eval(data_test.iloc[visit_idx]['drug_id']))
             input_medids = eval(pred_data.iloc[visit_idx]['preds'])
-            gt_medids = eval(pred_data.iloc[visit_idx]['labels'])
+            gt_medids = sorted(eval(pred_data.iloc[visit_idx]['labels']))
             assert gt_medids == output_medids
 
             output_med = []
