@@ -18,6 +18,8 @@ import utils
 
 def model_process(original_model_path="outputs/list_sft/checkpoint-XXXX",
                     output_model_path="Models/list_sft",):
+    print(f"original_model_path: {original_model_path}")
+    print(f"output_model_path: {output_model_path}")
     sft_model = MyModel.from_pretrained(original_model_path, hadm_id_map = {})
     grpo_model = sft_model.llm
     grpo_tokenizer = sft_model.tokenizer
@@ -34,7 +36,7 @@ def model_process(original_model_path="outputs/list_sft/checkpoint-XXXX",
 
     grpo_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     grpo_model.resize_token_embeddings(len(grpo_tokenizer))
-        
+
     grpo_model.to("cuda")
     pat_projector, dias_projector, pro_projector, drug_projector = sft_model.pat_projector, sft_model.dias_projector, sft_model.pro_projector, sft_model.drug_projector
 
@@ -74,3 +76,6 @@ def model_process(original_model_path="outputs/list_sft/checkpoint-XXXX",
 
     grpo_model.base_model.model.save_pretrained(output_model_path)
     grpo_tokenizer.save_pretrained(output_model_path)
+
+if __name__ == "__main__":
+    fire.Fire(model_process)
