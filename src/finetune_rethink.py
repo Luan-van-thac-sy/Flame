@@ -64,7 +64,7 @@ def finetune_rethink(
     resume_from_checkpoint = 0,  # either training checkpoint or final adapter
     group_by_length = False,  # faster, but produces an odd training loss curve
     use_flash_attn = True,  # whether to use Flash Attention
-    logging_dir = None    
+    logging_dir = None
 ):
     if data_path is None:
         raise ValueError("data_path is required")
@@ -121,9 +121,9 @@ def finetune_rethink(
             f"pat_embed_table_path: {pat_embed_table_path}\n"
             f"dias_embed_table_path: {dias_embed_table_path}\n"
             f"pro_embed_table_path: {pro_embed_table_path}\n"
-            f"drug_embed_table_path: {drug_embed_table_path}\n"  
+            f"drug_embed_table_path: {drug_embed_table_path}\n"
         )
-    
+
     devices = 'cuda'
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
@@ -172,7 +172,7 @@ def finetune_rethink(
                 param.requires_grad = False
                 if int(os.environ.get("LOCAL_RANK", 0)) == 0:
                     print(f"Freezing {name}")
-    
+
     if int(os.environ.get("LOCAL_RANK", 0)) == 0:
         print('\nSuccessfully loaded specified model and config\n')
         print(mymodel, '\n')
@@ -222,7 +222,7 @@ def finetune_rethink(
         data = load_dataset("json", data_files=data_path)
     else:
         data = load_dataset(data_path)
-        
+
     if val_set_size > 0:
         train_val = data["train"].train_test_split(
             test_size=val_set_size, shuffle=False
@@ -262,7 +262,7 @@ def finetune_rethink(
         eval_dataset=val_data,
         args=transformers.TrainingArguments(
             output_dir=output_dir,
-            evaluation_strategy="steps" if val_set_size > 0 else "no",
+            eval_strategy="steps" if val_set_size > 0 else "no",
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             save_strategy="steps",
