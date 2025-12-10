@@ -10,10 +10,10 @@ from tqdm import tqdm
 from collections import defaultdict
 import utils
 
-def generate_list_sft_data(sample_num = 100000, 
-                           output_dir = 'data/list_sft', 
-                           med_name2idx = 'data/data_process/output/mimic-iii/med_name2idx.json', 
-                           file_path ='data/data_process/output/mimic-iii/data4LLM_with_note.csv', 
+def generate_list_sft_data(sample_num = 100000,
+                           output_dir = 'data/list_sft',
+                           med_name2idx = 'data/data_process/output/mimic-iii/med_name2idx.json',
+                           file_path ='data/data_process/output/mimic-iii/data4LLM_with_note.csv',
                            evaluate_results_path = 'evaluate_results/cls/train'):
 
     if sample_num > 0:
@@ -39,7 +39,7 @@ def generate_list_sft_data(sample_num = 100000,
         each_gtlen_extra_dict = {}
 
         for idx in range(len(error_data)):
-            gt_len = error_data.iloc[idx]['GT Len']
+            gt_len = int(error_data.iloc[idx]['GT Len'])  # Convert to int to avoid type mismatch
             miss_num = error_data.iloc[idx]['Miss']
             extra_num = error_data.iloc[idx]['Extra']
             if gt_len not in each_gtlen_miss_dict:
@@ -49,6 +49,7 @@ def generate_list_sft_data(sample_num = 100000,
             each_gtlen_extra_dict[gt_len].append(extra_num)
 
         def sample_miss_extra(gt_len):
+            gt_len = int(gt_len)
             if gt_len not in each_gtlen_miss_dict:
                 raise ValueError(f"GT Len {gt_len} not found in the dictionary.")
             miss_num = random.choice(each_gtlen_miss_dict[gt_len])
@@ -59,6 +60,10 @@ def generate_list_sft_data(sample_num = 100000,
         miss_weights = drug_error_data['Miss'].tolist()
         extra_weights = drug_error_data['Extra'].tolist()
 
+        # Print info for debugging
+        print(f"Number of medicines in med_names: {len(med_names)}")
+        print(f"Number of weights in extra_weights: {len(extra_weights)}")
+        print(f"Will use max_med_idx: {min(len(med_names), len(extra_weights))}")
 
         def generate_input_medids(gt_medids):
             gt_len = len(gt_medids)
@@ -67,7 +72,9 @@ def generate_list_sft_data(sample_num = 100000,
             sample_miss_meds = np.random.choice(gt_medids, size=miss_num, replace=False, p=np.array(candidate_miss_weights) / np.sum(candidate_miss_weights))
             sample_miss_meds = sample_miss_meds.tolist()
 
-            extra_med_candidates = list(set(range(0, 151)) - set(gt_medids))
+            # Use actual number of medicines instead of hardcoded 151
+            max_med_idx = min(len(med_names), len(extra_weights))
+            extra_med_candidates = list(set(range(0, max_med_idx)) - set(gt_medids))
             candidate_extra_weights = [extra_weights[idx] for idx in extra_med_candidates]
             sample_extra_meds = np.random.choice(extra_med_candidates, size=extra_num, replace=False, p=np.array(candidate_extra_weights) / np.sum(candidate_extra_weights))
             sample_extra_meds = sample_extra_meds.tolist()
@@ -195,7 +202,7 @@ def generate_list_sft_data(sample_num = 100000,
         # json_data = []
         json_data_remove = []
         json_data_add = []
-        
+
         predict_data = os.path.join(evaluate_results_path, "evaluation_result.csv")
         pred_data = pd.read_csv(predict_data)
 
@@ -281,4 +288,3 @@ def generate_list_sft_data(sample_num = 100000,
 
 if __name__ == '__main__':
     fire.Fire(generate_list_sft_data)
-    
