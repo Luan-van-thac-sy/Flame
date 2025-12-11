@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
+ddi_path = "data/data_process/output/mimic-iii/ddi_A_final.pkl"
 ddi_metric = dill.load(open(ddi_path, "rb"))
 
 def cal_metric(pred, gt):

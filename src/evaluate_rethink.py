@@ -26,7 +26,7 @@ from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
-ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
+ddi_path = "data/data_process/output/mimic-iii/ddi_A_final.pkl"
 ddi_metric = dill.load(open(ddi_path, "rb"))
 
 
@@ -62,6 +62,7 @@ def evaluate_pretrain(
 
     result_path = os.path.join(evaluate_result_path, f"{task}.csv")
 
+    os.makedirs(os.path.dirname(result_path), exist_ok=True)
 
     with open(result_path, "w", newline='') as f:
         writer = csv.writer(f)

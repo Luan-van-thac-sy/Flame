@@ -5,9 +5,9 @@ import pandas as pd
 
 class Evaluator(object):
     def __init__(self):
-        ddi_path = '/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl'
-        voc_path = '/content/Flame/data/data_process/output/mimic-iii/voc_final.pkl'
-        drugbank2name_file = '/content/Flame/data/data_process/input/drugbank2name.csv'
+        ddi_path = 'data/data_process/output/mimic-iii/ddi_A_final.pkl'
+        voc_path = 'data/data_process/output/mimic-iii/voc_final.pkl'
+        drugbank2name_file = 'data/data_process/input/drugbank2name.csv'
         self.ddi_A = dill.load(open(ddi_path, 'rb'))
         self.voc = dill.load(open(voc_path, 'rb'))
         self.drugbank2name = pd.read_csv(drugbank2name_file)

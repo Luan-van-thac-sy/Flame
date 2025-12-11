@@ -27,7 +27,7 @@ from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
-ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
+ddi_path = "data/data_process/output/mimic-iii/ddi_A_final.pkl"
 ddi_metric = dill.load(open(ddi_path, "rb"))
 
 
