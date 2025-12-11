@@ -104,8 +104,8 @@ def finetune_rethink_grpo(
         f"an example of the training data: {train_data[0]}"
     )
 
-    ddi_path = "/content/Flame/data/data_process/output/mimic-iii/ddi_A_final.pkl"
-    med_name2idx_path = "/content/Flame/data/data_process/output/mimic-iii/med_name2idx.json"
+    ddi_path = "data/data_process/output/mimic-iii/ddi_A_final.pkl"
+    med_name2idx_path = "data/data_process/output/mimic-iii/med_name2idx.json"
 
     ddi_metric = dill.load(open(ddi_path, "rb"))
     med_name2idx = json.load(open(med_name2idx_path, "r"))
