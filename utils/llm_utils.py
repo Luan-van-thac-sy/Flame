@@ -60,22 +60,39 @@ class LocalLLM:
             model_kwargs["quantization_config"] = quantization_config
 
         # Load model
+        use_device_map = False
         if self.device == "cuda":
             model_kwargs["device_map"] = "auto"
+            use_device_map = True
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             **model_kwargs
         )
 
+        # Check if model was actually loaded with device_map (fallback check)
+        if hasattr(self.model, "hf_device_map") and self.model.hf_device_map:
+            use_device_map = True
+
         # Create pipeline for text generation
-        self.generator = pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            device=0 if self.device == "cuda" else -1,
-            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-        )
+        # If using device_map="auto", don't pass device to pipeline
+        pipeline_kwargs = {
+            "task": "text-generation",
+            "model": self.model,
+            "tokenizer": self.tokenizer,
+        }
+
+        # Only add device if not using device_map
+        # When device_map is used, accelerate handles device placement
+        if not use_device_map:
+            pipeline_kwargs["device"] = 0 if self.device == "cuda" else -1
+
+        # Use dtype instead of torch_dtype (newer API, but still supported)
+        # dtype is optional and can be omitted if model already has correct dtype
+        if self.device == "cuda":
+            pipeline_kwargs["dtype"] = torch.float16
+
+        self.generator = pipeline(**pipeline_kwargs)
 
         print("Model loaded successfully!")
 
