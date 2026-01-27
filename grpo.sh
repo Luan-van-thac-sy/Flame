@@ -1,0 +1,19 @@
+python src/finetune_rethink_step_grpo.py \
+    --grpo_model_path Models/list_sft \
+    --data_path data/list_grpo/mix_25000.json \
+    --output_dir outputs/list_grpo \
+    --batch_size 4 \
+    --gradient_accumulation_steps 8 \
+    --num_epochs 1 \
+    --num_generations 4 \
+    --learning_rate 1e-5 \
+    --val_set_size 0 \
+    --save_steps 100 \
+    --use_vllm True \
+    --use_lora True \
+    --lora_r 16 \
+    --lora_alpha 32 \
+    --lora_target_modules "['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj']" \
+    --alpha 0 \
+    --beta 0.2 \
+    --step_reward_weight 0.5

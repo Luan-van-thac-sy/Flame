@@ -52,12 +52,20 @@ python data/process.py
 
 ### Step 2: Process unstructured clinical notes
 
-- Requires GPT API access.
-- Run the notebook:
+- **Option A: Using Local LLM (Recommended - No API costs)**
+  - Uses Mistral-7B-Instruct-v0.2 from Hugging Face
+  - Runs locally in Google Colab or your environment
+  - Requires GPU for reasonable speed (Colab free tier works)
+  - Run the notebook:
+    ```
+    data/generate_note.ipynb
+    ```
+  - The notebook will automatically download and load the model
+  - For Colab free tier, set `load_in_4bit=True` in the notebook to save memory
 
-```
-data/generate_note.ipynb
-```
+- **Option B: Using GPT API (Original method)**
+  - Requires OpenAI API access and API key
+  - See `data/generate_note_gpt.ipynb` for the original implementation
 
 - Output: `data/data_process/output/mimic-iii/data4LLM_with_note.csv`
 
